@@ -39,3 +39,12 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+shadowJar {
+    manifest {
+        attributes(
+                'Main-Class': 'fun.fifu.ridwk.Main',
+                "Multi-Release": true
+        )
+    }
+}
