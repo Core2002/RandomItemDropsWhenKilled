@@ -1,26 +1,52 @@
 package fun.fifu.ridwk;
 
 import com.alkaidmc.alkaid.bukkit.event.AlkaidEvent;
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.Random;
+
 public class RandomItemDropsWhenKilled extends JavaPlugin {
+    private static final Random random = new Random();
+
     @Override
     public void onEnable() {
         new AlkaidEvent(this).simple()
-                // 监听的事件
                 .event(PlayerJoinEvent.class)
-                // 事件处理器
                 .listener(event -> {
-
-                    event.getPlayer().sendMessage("欢迎" + event.getPlayer().getDisplayName() + "来到服务器");
+                    Bukkit.getOnlinePlayers().forEach(player -> {
+                        player.sendMessage("欢迎" + event.getPlayer().getDisplayName() + "来到服务器");
+                    });
                 })
-                // 事件优先级
                 .priority(EventPriority.HIGHEST)
-                // 忽略取消标志位
                 .ignore(false)
-                // 将事件注册到 Bukkit 事件系统
+                .register();
+
+        new AlkaidEvent(this).simple()
+                .event(PlayerDeathEvent.class)
+                .listener(event -> {
+                    Player player = event.getEntity();
+                    PlayerInventory inventory = player.getInventory();
+                    inventory.forEach(itemStack -> {
+                        if (random.nextDouble() > 0.3) return;
+                        if (itemStack == null || itemStack.getType().isAir()) return;
+                        var num = itemStack.getAmount() - 1;
+                        if (num < 0) num = 0;
+                        ItemStack drop = itemStack.clone();
+                        drop.setAmount(1);
+                        itemStack.setAmount(num);
+                        player.getWorld().dropItem(player.getLocation(), drop);
+                    });
+                })
+                .priority(EventPriority.HIGHEST)
+                .ignore(false)
                 .register();
     }
+
 }
