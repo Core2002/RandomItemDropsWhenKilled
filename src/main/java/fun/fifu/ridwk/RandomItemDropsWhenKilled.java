@@ -5,7 +5,9 @@ import com.alkaidmc.alkaid.bukkit.event.AlkaidEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -19,12 +21,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RandomItemDropsWhenKilled extends JavaPlugin {
+public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     private static final Random random = new Random();
     private static final Map<Player, Player> damageMap = new HashMap<>();
 
     @Override
     public void onEnable() {
+        getServer().getPluginManager().registerEvents(this, this);
+
         // 死亡不掉落
         new AlkaidEvent(this).simple()
                 .event(WorldLoadEvent.class)
@@ -48,39 +52,10 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
                 .ignore(false)
                 .register();
 
-        // 记录伤害情况
-        new AlkaidEvent(this).simple()
-                .event(EntityDamageByEntityEvent.class)
-                .listener(event -> {
-                    if (event.getEntity() instanceof Player player && event.getDamager() instanceof Player damage) {
-                        damageMap.put(player, damage);
-                    }
-                })
-                .priority(EventPriority.HIGHEST)
-                .ignore(false)
-                .register();
-
         // 死亡随机掉落物品
         new AlkaidEvent(this).simple()
                 .event(PlayerDeathEvent.class)
-                .listener(event -> {
-                    Player player = event.getEntity();
-                    PlayerInventory inventory = player.getInventory();
-                    Player damage = damageMap.get(player);
-                    if (damage == null) return;
-                    PlayerInventory damageInventory = damage.getInventory();
-                    if (!hasPlunderItem(damageInventory)) return;
-                    inventory.forEach(itemStack -> {
-                        if (random.nextDouble() > 0.3) return;
-                        if (itemStack == null || itemStack.getType().isAir()) return;
-                        var num = itemStack.getAmount() - 1;
-                        if (num < 0) num = 0;
-                        ItemStack drop = itemStack.clone();
-                        drop.setAmount(1);
-                        itemStack.setAmount(num);
-                        player.getWorld().dropItem(player.getLocation(), drop);
-                    });
-                })
+                .listener(event -> randomDropItems(event.getEntity()))
                 .priority(EventPriority.HIGHEST)
                 .ignore(false)
                 .register();
@@ -127,6 +102,13 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
         damageMap.clear();
     }
 
+    @EventHandler
+    public void tagDamage(EntityDamageByEntityEvent event) {
+        if (event.getEntity() instanceof Player player && event.getDamager() instanceof Player damage) {
+            damageMap.put(player, damage);
+        }
+    }
+
     /**
      * 检查玩家背包是否携带掠夺物品
      *
@@ -171,6 +153,29 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
         lore.add(0, "[掠夺]");
         itemMeta.setLore(lore);
         itemStack.setItemMeta(itemMeta);
+    }
+
+    public void randomDropItems(Player player) {
+        PlayerInventory inventory = player.getInventory();
+        Player damage = damageMap.get(player);
+        if (damage == null) return;
+        PlayerInventory damageInventory = damage.getInventory();
+        if (!hasPlunderItem(damageInventory)) return;
+        inventory.forEach(itemStack -> {
+            if (random.nextDouble() > 0.3) return;
+            if (itemStack == null || itemStack.getType().isAir()) return;
+            int dropNum = random.nextInt(itemStack.getAmount());
+            int num = itemStack.getAmount() - dropNum;
+            if (num < 0) {
+                num = 0;
+                dropNum = itemStack.getAmount();
+            }
+            if (dropNum == 0) return;
+            ItemStack drop = itemStack.clone();
+            drop.setAmount(dropNum);
+            itemStack.setAmount(num);
+            player.getWorld().dropItem(player.getLocation(), drop);
+        });
     }
 
 }
