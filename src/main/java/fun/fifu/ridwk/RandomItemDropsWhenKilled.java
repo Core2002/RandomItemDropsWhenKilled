@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -15,13 +16,12 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RandomItemDropsWhenKilled extends JavaPlugin {
     private static final Random random = new Random();
+    private static final Map<Player, Player> damageMap = new HashMap<>();
 
     @Override
     public void onEnable() {
@@ -48,13 +48,28 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
                 .ignore(false)
                 .register();
 
+        // 记录伤害情况
+        new AlkaidEvent(this).simple()
+                .event(EntityDamageByEntityEvent.class)
+                .listener(event -> {
+                    if (event.getEntity() instanceof Player player && event.getDamager() instanceof Player damage) {
+                        damageMap.put(player, damage);
+                    }
+                })
+                .priority(EventPriority.HIGHEST)
+                .ignore(false)
+                .register();
+
         // 死亡随机掉落物品
         new AlkaidEvent(this).simple()
                 .event(PlayerDeathEvent.class)
                 .listener(event -> {
                     Player player = event.getEntity();
                     PlayerInventory inventory = player.getInventory();
-                    if (!hasPlunderItem(inventory)) return;
+                    Player damage = damageMap.get(player);
+                    if (damage == null) return;
+                    PlayerInventory damageInventory = damage.getInventory();
+                    if (!hasPlunderItem(damageInventory)) return;
                     inventory.forEach(itemStack -> {
                         if (random.nextDouble() > 0.3) return;
                         if (itemStack == null || itemStack.getType().isAir()) return;
@@ -100,10 +115,16 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
                     } else {
                         player.sendMessage("你没有 ridwk.add-plunder 权限，无法使用命令");
                     }
+                    event.setCancelled(true);
                 })
                 .priority(EventPriority.HIGHEST)
                 .ignore(true)
                 .register();
+    }
+
+    @Override
+    public void onDisable() {
+        damageMap.clear();
     }
 
     /**
