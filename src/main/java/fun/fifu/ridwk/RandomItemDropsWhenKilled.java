@@ -19,6 +19,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        // 死亡不掉落
         new AlkaidEvent(this).simple()
                 .event(WorldLoadEvent.class)
                 .listener(event -> {
@@ -29,6 +30,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
                 .ignore(false)
                 .register();
 
+        // 进服欢迎
         new AlkaidEvent(this).simple()
                 .event(PlayerJoinEvent.class)
                 .listener(event -> {
@@ -40,6 +42,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
                 .ignore(false)
                 .register();
 
+        // 死亡随机掉落物品
         new AlkaidEvent(this).simple()
                 .event(PlayerDeathEvent.class)
                 .listener(event -> {
