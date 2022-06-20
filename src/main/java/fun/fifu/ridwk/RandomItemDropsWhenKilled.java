@@ -2,10 +2,12 @@ package fun.fifu.ridwk;
 
 import com.alkaidmc.alkaid.bukkit.event.AlkaidEvent;
 import org.bukkit.Bukkit;
+import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -17,6 +19,16 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        new AlkaidEvent(this).simple()
+                .event(WorldLoadEvent.class)
+                .listener(event -> {
+                    event.getWorld().setGameRule(GameRule.KEEP_INVENTORY, true);
+                    getLogger().info(event.getWorld().getName() + " 的死亡不掉落已开启");
+                })
+                .priority(EventPriority.HIGHEST)
+                .ignore(false)
+                .register();
+
         new AlkaidEvent(this).simple()
                 .event(PlayerJoinEvent.class)
                 .listener(event -> {
