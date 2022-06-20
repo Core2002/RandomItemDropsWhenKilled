@@ -10,9 +10,12 @@ import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RandomItemDropsWhenKilled extends JavaPlugin {
     private static final Random random = new Random();
@@ -48,6 +51,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
                 .listener(event -> {
                     Player player = event.getEntity();
                     PlayerInventory inventory = player.getInventory();
+                    if (!hasPlunderItem(inventory)) return;
                     inventory.forEach(itemStack -> {
                         if (random.nextDouble() > 0.3) return;
                         if (itemStack == null || itemStack.getType().isAir()) return;
@@ -62,6 +66,26 @@ public class RandomItemDropsWhenKilled extends JavaPlugin {
                 .priority(EventPriority.HIGHEST)
                 .ignore(false)
                 .register();
+
+
+    }
+
+    /**
+     * 检查玩家背包是否携带掠夺物品
+     *
+     * @return true:携带      false:不携带
+     */
+    public boolean hasPlunderItem(PlayerInventory inventory) {
+        AtomicBoolean has = new AtomicBoolean(false);
+        inventory.forEach(itemStack -> {
+            if (itemStack == null || itemStack.getType().isAir()) return;
+            ItemMeta itemMeta = itemStack.getItemMeta();
+            if (itemMeta == null) return;
+            List<String> lore = itemMeta.getLore();
+            if (lore == null) return;
+            lore.stream().filter(s -> s.contains("[掠夺]")).forEach(s -> has.set(true));
+        });
+        return has.get();
     }
 
 }
