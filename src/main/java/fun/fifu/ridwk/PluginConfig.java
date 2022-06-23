@@ -22,6 +22,7 @@ public class PluginConfig {
     Double dropProbability = 0.3;
     String plunderTag = "[掠夺]";
     String durableTag = "耐久:";
+    Integer defaultDurableNum = 6;
 
     static {
         INSTEN_CONFIG = build();
@@ -40,7 +41,7 @@ public class PluginConfig {
         return null;
     }
 
-    private PluginConfig(){
+    private PluginConfig() {
         plugin.getLogger().info("成功加载配置文件：" + gson.toJson(this));
     }
 

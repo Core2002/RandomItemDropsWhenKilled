@@ -141,8 +141,14 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
         inventory.forEach(itemStack -> {
             if (itemStack == null || itemStack.getType().isAir())
                 return;
-            if (hasPlunderItem(itemStack))
-                has.set(true);
+            if (hasPlunderItem(itemStack)) {
+                var num = readItemDurable(itemStack);
+                if (num >= 0) {
+                    has.set(true);
+                    writeItemDurable(itemStack, num--);
+                }
+            }
+
         });
         return has.get();
     }
@@ -183,6 +189,8 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
         lore.add(0, PluginConfig.INSTEN_CONFIG.getPlunderTag());
         itemMeta.setLore(lore);
         itemStack.setItemMeta(itemMeta);
+
+        writeItemDurable(itemStack, PluginConfig.INSTEN_CONFIG.getDefaultDurableNum());
     }
 
     /**
