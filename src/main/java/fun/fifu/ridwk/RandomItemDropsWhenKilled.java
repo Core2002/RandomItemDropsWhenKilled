@@ -25,6 +25,13 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     private static final Random random = new Random();
     private static final Map<Player, Player> damageMap = new HashMap<>();
 
+    public static RandomItemDropsWhenKilled randomItemDropsWhenKilled;
+
+    @Override
+    public void onLoad() {
+        randomItemDropsWhenKilled = this;
+    }
+    
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
@@ -63,30 +70,34 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
         // 命令：给物品标记掠夺属性
         new AlkaidCommand(this).simple()
                 .command("ridwkAddPlunder")
-                .description("将手上的物品标记为[掠夺]物品")
+                .description("将手上的物品标记为" + PluginConfig.INSTEN_CONFIG.getPlunderTag() + "物品")
                 .permission("ridwk.add-plunder")
-                .usage("/ridwkAddPlunder 将手上的物品标记为[掠夺]物品")
+                .usage("/ridwkAddPlunder 将手上的物品标记为" + PluginConfig.INSTEN_CONFIG.getPlunderTag() + "物品")
                 .executor((sender, command, label, args) -> {
-                    if (!(sender instanceof Player player)) return true;
+                    if (!(sender instanceof Player player))
+                        return true;
                     ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
-                    if (itemInMainHand.getType().isAir()) return true;
+                    if (itemInMainHand.getType().isAir())
+                        return true;
                     makePlunderItem(itemInMainHand);
-                    player.sendMessage("已为物品添加[掠夺]属性");
+                    player.sendMessage("已为物品添加" + PluginConfig.INSTEN_CONFIG.getPlunderTag() + "属性");
                     return true;
                 })
                 .register();
 
-        //TODO 临时命令：给物品标记掠夺属性
+        // TODO 临时命令：给物品标记掠夺属性
         new AlkaidEvent(this).simple()
                 .event(AsyncPlayerChatEvent.class)
                 .listener(event -> {
-                    if (!event.getMessage().equalsIgnoreCase("ridwkAddPlunder")) return;
+                    if (!event.getMessage().equalsIgnoreCase("ridwkAddPlunder"))
+                        return;
                     Player player = event.getPlayer();
                     if (player.hasPermission("ridwk.add-plunder")) {
                         ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
-                        if (itemInMainHand.getType().isAir()) return;
+                        if (itemInMainHand.getType().isAir())
+                            return;
                         makePlunderItem(itemInMainHand);
-                        player.sendMessage("已为物品添加[掠夺]属性");
+                        player.sendMessage("已为物品添加" + PluginConfig.INSTEN_CONFIG.getPlunderTag() + "属性");
                     } else {
                         player.sendMessage("你没有 ridwk.add-plunder 权限，无法使用命令");
                     }
@@ -112,13 +123,15 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     /**
      * 检查玩家背包是否携带掠夺物品
      *
-     * @return true:携带      false:不携带
+     * @return true:携带 false:不携带
      */
     public boolean hasPlunderItem(PlayerInventory inventory) {
         AtomicBoolean has = new AtomicBoolean(false);
         inventory.forEach(itemStack -> {
-            if (itemStack == null || itemStack.getType().isAir()) return;
-            if (hasPlunderItem(itemStack)) has.set(true);
+            if (itemStack == null || itemStack.getType().isAir())
+                return;
+            if (hasPlunderItem(itemStack))
+                has.set(true);
         });
         return has.get();
     }
@@ -126,16 +139,19 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     /**
      * 检查物品是否携带掠夺物品
      *
-     * @return true:携带      false:不携带
+     * @return true:携带 false:不携带
      */
     public boolean hasPlunderItem(ItemStack itemStack) {
         AtomicBoolean is = new AtomicBoolean(false);
-        if (itemStack == null || itemStack.getType().isAir()) return false;
+        if (itemStack == null || itemStack.getType().isAir())
+            return false;
         ItemMeta itemMeta = itemStack.getItemMeta();
-        if (itemMeta == null) return false;
+        if (itemMeta == null)
+            return false;
         List<String> lore = itemMeta.getLore();
-        if (lore == null) return false;
-        lore.stream().filter(s -> s.contains("[掠夺]")).forEach(s -> is.set(true));
+        if (lore == null)
+            return false;
+        lore.stream().filter(s -> s.contains(PluginConfig.INSTEN_CONFIG.getPlunderTag())).forEach(s -> is.set(true));
         return is.get();
     }
 
@@ -145,12 +161,15 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
      * @param itemStack 待标记的物品
      */
     public void makePlunderItem(ItemStack itemStack) {
-        if (hasPlunderItem(itemStack)) return;
+        if (hasPlunderItem(itemStack))
+            return;
         ItemMeta itemMeta = itemStack.getItemMeta();
-        if (itemMeta == null) return;
+        if (itemMeta == null)
+            return;
         List<String> lore = itemMeta.getLore();
-        if (lore == null) lore = new ArrayList<>();
-        lore.add(0, "[掠夺]");
+        if (lore == null)
+            lore = new ArrayList<>();
+        lore.add(0, PluginConfig.INSTEN_CONFIG.getPlunderTag());
         itemMeta.setLore(lore);
         itemStack.setItemMeta(itemMeta);
     }
@@ -158,19 +177,24 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     public void randomDropItems(Player player) {
         PlayerInventory inventory = player.getInventory();
         Player damage = damageMap.get(player);
-        if (damage == null) return;
+        if (damage == null)
+            return;
         PlayerInventory damageInventory = damage.getInventory();
-        if (!hasPlunderItem(damageInventory)) return;
+        if (!hasPlunderItem(damageInventory))
+            return;
         inventory.forEach(itemStack -> {
-            if (random.nextDouble() > 0.3) return;
-            if (itemStack == null || itemStack.getType().isAir()) return;
+            if (random.nextDouble() > PluginConfig.INSTEN_CONFIG.getDropProbability())
+                return;
+            if (itemStack == null || itemStack.getType().isAir())
+                return;
             int dropNum = random.nextInt(itemStack.getAmount());
             int num = itemStack.getAmount() - dropNum;
             if (num < 0) {
                 num = 0;
                 dropNum = itemStack.getAmount();
             }
-            if (dropNum == 0) return;
+            if (dropNum == 0)
+                return;
             ItemStack drop = itemStack.clone();
             drop.setAmount(dropNum);
             itemStack.setAmount(num);
