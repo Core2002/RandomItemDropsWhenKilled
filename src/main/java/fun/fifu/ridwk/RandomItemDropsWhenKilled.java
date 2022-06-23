@@ -107,6 +107,16 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
             res.player().sendMessage("物品耐久为" + readItemDurable(itemInMainHand));
         });
 
+        // TODO 临时命令：设置手上物品耐久
+        makePlayerConmmand("ridwk.add-plunder", "writeDurable", res -> {
+            ItemStack itemInMainHand = res.player().getInventory().getItemInMainHand();
+            if (itemInMainHand.getType().isAir())
+                return;
+            var num = Integer.parseInt(res.args()[1]);
+            writeItemDurable(itemInMainHand, num);
+            res.player().sendMessage("物品耐久已经设置为" + num);
+        });
+
     }
 
     @Override
@@ -215,12 +225,36 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
      * @return 该物品的剩余使用次数
      */
     public int readItemDurable(ItemStack itemStack) {
-        String text = itemStack.getItemMeta().getLore().stream()
+        var itemMeta = itemStack.getItemMeta();
+        if (!itemMeta.hasLore())
+            return -1;
+        String text = itemMeta.getLore().stream()
                 .filter(s -> s.contains(PluginConfig.INSTEN_CONFIG.getDurableTag()))
                 .findFirst().orElse("-1");
         if (text == null)
             return 0;
         return Integer.parseInt(text.replaceAll(PluginConfig.INSTEN_CONFIG.getDurableTag(), ""));
+    }
+
+    /**
+     * 设置指定物品堆的耐久
+     * 
+     * @param itemStack 要设置耐久的物品堆
+     */
+    public void writeItemDurable(ItemStack itemStack, int num) {
+        var itemMeta = itemStack.getItemMeta();
+        var lore = itemMeta.getLore();
+        if (lore == null)
+            lore = new ArrayList<>();
+        if (readItemDurable(itemStack) == -1) {
+            lore.add(PluginConfig.INSTEN_CONFIG.durableTag + num);
+        } else {
+            for (int i = 0; i < lore.size(); i++)
+                if (lore.get(i).contains(PluginConfig.INSTEN_CONFIG.getDurableTag()))
+                    lore.set(i, PluginConfig.INSTEN_CONFIG.durableTag + num);
+        }
+        itemMeta.setLore(lore);
+        itemStack.setItemMeta(itemMeta);
     }
 
     @Data
@@ -241,13 +275,14 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
         new AlkaidEvent(RandomItemDropsWhenKilled.randomItemDropsWhenKilled).simple()
                 .event(AsyncPlayerChatEvent.class)
                 .listener(event -> {
-                    if (!event.getMessage().equalsIgnoreCase(command))
+                    var args = event.getMessage().split(" ");
+                    if (!args[0].equalsIgnoreCase(command))
                         return;
                     Player player = event.getPlayer();
                     if (player.hasPermission(permission)) {
                         exec.accept(new Res()
                                 .player(player)
-                                .args(event.getMessage().split(" ")));
+                                .args(args));
                     } else {
                         player.sendMessage("你没有 " + permission + " 权限，无法使用 " + command + " 命令");
                         return;
