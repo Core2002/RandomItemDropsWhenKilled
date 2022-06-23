@@ -2,6 +2,10 @@ package fun.fifu.ridwk;
 
 import com.alkaidmc.alkaid.bukkit.command.AlkaidCommand;
 import com.alkaidmc.alkaid.bukkit.event.AlkaidEvent;
+
+import lombok.Data;
+import lombok.experimental.Accessors;
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
 import org.bukkit.entity.Player;
@@ -20,6 +24,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     private static final Random random = new Random();
@@ -86,26 +91,22 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
                 .register();
 
         // TODO 临时命令：给物品标记掠夺属性
-        new AlkaidEvent(this).simple()
-                .event(AsyncPlayerChatEvent.class)
-                .listener(event -> {
-                    if (!event.getMessage().equalsIgnoreCase("ridwkAddPlunder"))
-                        return;
-                    Player player = event.getPlayer();
-                    if (player.hasPermission("ridwk.add-plunder")) {
-                        ItemStack itemInMainHand = player.getInventory().getItemInMainHand();
-                        if (itemInMainHand.getType().isAir())
-                            return;
-                        makePlunderItem(itemInMainHand);
-                        player.sendMessage("已为物品添加" + PluginConfig.INSTEN_CONFIG.getPlunderTag() + "属性");
-                    } else {
-                        player.sendMessage("你没有 ridwk.add-plunder 权限，无法使用命令");
-                    }
-                    event.setCancelled(true);
-                })
-                .priority(EventPriority.HIGHEST)
-                .ignore(true)
-                .register();
+        makePlayerConmmand("ridwk.add-plunder", "ridwkAddPlunder", res -> {
+            ItemStack itemInMainHand = res.player().getInventory().getItemInMainHand();
+            if (itemInMainHand.getType().isAir())
+                return;
+            makePlunderItem(itemInMainHand);
+            res.player().sendMessage("已为物品添加" + PluginConfig.INSTEN_CONFIG.getPlunderTag() + "属性");
+        });
+
+        // TODO 临时命令：查看手上物品耐久
+        makePlayerConmmand("ridwk.add-plunder", "readDurable", res -> {
+            ItemStack itemInMainHand = res.player().getInventory().getItemInMainHand();
+            if (itemInMainHand.getType().isAir())
+                return;
+            res.player().sendMessage("物品耐久为" + readItemDurable(itemInMainHand));
+        });
+
     }
 
     @Override
@@ -176,6 +177,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
 
     /**
      * 让指定玩家随机掉落物品
+     * 
      * @param player 目标玩家
      */
     public void randomDropItems(Player player) {
@@ -204,6 +206,57 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
             itemStack.setAmount(num);
             player.getWorld().dropItem(player.getLocation(), drop);
         });
+    }
+
+    /**
+     * 读取指定物品堆的耐久
+     * 
+     * @param itemStack 要读取耐久的物品堆
+     * @return 该物品的剩余使用次数
+     */
+    public int readItemDurable(ItemStack itemStack) {
+        String text = itemStack.getItemMeta().getLore().stream()
+                .filter(s -> s.contains(PluginConfig.INSTEN_CONFIG.getDurableTag()))
+                .findFirst().orElse("-1");
+        if (text == null)
+            return 0;
+        return Integer.parseInt(text.replaceAll(PluginConfig.INSTEN_CONFIG.getDurableTag(), ""));
+    }
+
+    @Data
+    @Accessors(fluent = true, chain = true)
+    private static class Res {
+        private Player player;
+        private String[] args;
+    }
+
+    /**
+     * 构建一个伪命令，玩家用聊天的形式触发
+     * 
+     * @param permission 触发命令所需的权限
+     * @param command    命令内容
+     * @param exec       触发后执行的代码
+     */
+    public static void makePlayerConmmand(String permission, String command, Consumer<Res> exec) {
+        new AlkaidEvent(RandomItemDropsWhenKilled.randomItemDropsWhenKilled).simple()
+                .event(AsyncPlayerChatEvent.class)
+                .listener(event -> {
+                    if (!event.getMessage().equalsIgnoreCase(command))
+                        return;
+                    Player player = event.getPlayer();
+                    if (player.hasPermission(permission)) {
+                        exec.accept(new Res()
+                                .player(player)
+                                .args(event.getMessage().split(" ")));
+                    } else {
+                        player.sendMessage("你没有 " + permission + " 权限，无法使用 " + command + " 命令");
+                        return;
+                    }
+                    event.setCancelled(true);
+                })
+                .priority(EventPriority.HIGHEST)
+                .ignore(true)
+                .register();
     }
 
 }

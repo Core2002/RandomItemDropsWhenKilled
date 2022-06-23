@@ -1,4 +1,5 @@
 {
     "dropProbability": 0.3,
-    "plunderTag": "[掠夺]"
+    "plunderTag": "[掠夺]",
+    "durableTag": "耐久:"
 }

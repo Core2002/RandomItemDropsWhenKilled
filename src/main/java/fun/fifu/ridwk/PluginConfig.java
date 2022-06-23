@@ -21,6 +21,7 @@ public class PluginConfig {
 
     Double dropProbability = 0.3;
     String plunderTag = "[掠夺]";
+    String durableTag = "耐久:";
 
     static {
         INSTEN_CONFIG = build();
