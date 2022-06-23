@@ -31,7 +31,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     public void onLoad() {
         randomItemDropsWhenKilled = this;
     }
-    
+
     @Override
     public void onEnable() {
         getServer().getPluginManager().registerEvents(this, this);
@@ -174,6 +174,10 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
         itemStack.setItemMeta(itemMeta);
     }
 
+    /**
+     * 让指定玩家随机掉落物品
+     * @param player 目标玩家
+     */
     public void randomDropItems(Player player) {
         PlayerInventory inventory = player.getInventory();
         Player damage = damageMap.get(player);
