@@ -261,6 +261,11 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
                 if (lore.get(i).contains(PluginConfig.INSTEN_CONFIG.getDurableTag()))
                     lore.set(i, PluginConfig.INSTEN_CONFIG.durableTag + num);
         }
+        if (num <= 0) {
+            for (int i = 0; i < lore.size(); i++)
+                if (lore.get(i).contains(PluginConfig.INSTEN_CONFIG.getDurableTag()))
+                    lore.remove(i);
+        }
         itemMeta.setLore(lore);
         itemStack.setItemMeta(itemMeta);
     }
