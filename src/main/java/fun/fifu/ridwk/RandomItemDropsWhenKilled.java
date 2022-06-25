@@ -8,7 +8,6 @@ import lombok.experimental.Accessors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -65,10 +64,18 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
                 .ignore(false)
                 .register();
 
-        // 死亡随机掉落物品
+        // 掠夺
         new AlkaidEvent(this).simple()
                 .event(PlayerDeathEvent.class)
                 .listener(event -> randomDropItems(event.getEntity()))
+                .priority(EventPriority.HIGHEST)
+                .ignore(false)
+                .register();
+
+        // 劫夺图腾
+        new AlkaidEvent(this).simple()
+                .event(PlayerDeathEvent.class)
+                .listener(event -> dropAllItems(event.getEntity()))
                 .priority(EventPriority.HIGHEST)
                 .ignore(false)
                 .register();
@@ -135,7 +142,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     /**
      * 检查玩家背包是否携带掠夺物品,若检查到，则消费该物品一个耐久
      *
-     * @return true:携带 false:不携带劫夺图腾
+     * @return true:携带 false:不携带
      */
     public boolean hasPlunderItemAndSpend(Player player) {
         AtomicBoolean has = new AtomicBoolean(false);
@@ -147,7 +154,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
                 if (--num > 0) {
                     has.set(true);
                     writeItemDurable(itemStack, num);
-                }else{
+                } else {
                     itemStack.setAmount(0);
                     player.sendMessage("因为使用次数耗尽，你消耗了一个掠夺符");
                 }
@@ -215,6 +222,36 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
             if (itemStack == null || itemStack.getType().isAir())
                 return;
             int dropNum = random.nextInt(itemStack.getAmount());
+            int num = itemStack.getAmount() - dropNum;
+            if (num < 0) {
+                num = 0;
+                dropNum = itemStack.getAmount();
+            }
+            if (dropNum == 0)
+                return;
+            ItemStack drop = itemStack.clone();
+            drop.setAmount(dropNum);
+            itemStack.setAmount(num);
+            player.getWorld().dropItem(player.getLocation(), drop);
+        });
+    }
+
+    /**
+     * 让指定玩家掉落所有物品
+     * 
+     * @param player 目标玩家
+     */
+    public void dropAllItems(Player player) {
+        PlayerInventory inventory = player.getInventory();
+        Player damage = damageMap.get(player);
+        if (damage == null)
+            return;
+        if (!NekoUtil.hasTagItem(damage.getInventory(), "劫夺图腾"))
+            return;
+        inventory.forEach(itemStack -> {
+            if (itemStack == null || itemStack.getType().isAir())
+                return;
+            int dropNum = itemStack.getAmount();
             int num = itemStack.getAmount() - dropNum;
             if (num < 0) {
                 num = 0;
