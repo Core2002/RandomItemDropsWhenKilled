@@ -1,2 +1,2 @@
 # RandomItemDropsWhenKilled
-被击杀随机掉落物品
+抢劫插件，击杀玩家随机掉落物品

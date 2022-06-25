@@ -8,6 +8,7 @@ import lombok.experimental.Accessors;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameRule;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -132,20 +133,23 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     }
 
     /**
-     * 检查玩家背包是否携带掠夺物品
+     * 检查玩家背包是否携带掠夺物品,若检查到，则消费该物品一个耐久
      *
      * @return true:携带 false:不携带
      */
-    public boolean hasPlunderItem(PlayerInventory inventory) {
+    public boolean hasPlunderItemAndSpend(Player player) {
         AtomicBoolean has = new AtomicBoolean(false);
-        inventory.forEach(itemStack -> {
+        player.getInventory().forEach(itemStack -> {
             if (itemStack == null || itemStack.getType().isAir())
                 return;
             if (hasPlunderItem(itemStack)) {
                 var num = readItemDurable(itemStack);
-                if (num >= 0) {
+                if (--num > 0) {
                     has.set(true);
-                    writeItemDurable(itemStack, num--);
+                    writeItemDurable(itemStack, num);
+                }else{
+                    itemStack.setAmount(0);
+                    player.sendMessage("因为使用次数耗尽，你消耗了一个掠夺符");
                 }
             }
 
@@ -203,8 +207,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
         Player damage = damageMap.get(player);
         if (damage == null)
             return;
-        PlayerInventory damageInventory = damage.getInventory();
-        if (!hasPlunderItem(damageInventory))
+        if (!hasPlunderItemAndSpend(damage))
             return;
         inventory.forEach(itemStack -> {
             if (random.nextDouble() > PluginConfig.INSTEN_CONFIG.getDropProbability())
