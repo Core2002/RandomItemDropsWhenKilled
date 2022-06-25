@@ -64,18 +64,13 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
                 .ignore(false)
                 .register();
 
-        // 掠夺
+        // 掠夺 劫夺图腾
         new AlkaidEvent(this).simple()
                 .event(PlayerDeathEvent.class)
-                .listener(event -> randomDropItems(event.getEntity()))
-                .priority(EventPriority.HIGHEST)
-                .ignore(false)
-                .register();
-
-        // 劫夺图腾
-        new AlkaidEvent(this).simple()
-                .event(PlayerDeathEvent.class)
-                .listener(event -> dropAllItems(event.getEntity()))
+                .listener(event -> {
+                    randomDropItems(event.getEntity());
+                    dropAllItems(event.getEntity());
+                })
                 .priority(EventPriority.HIGHEST)
                 .ignore(false)
                 .register();
@@ -251,12 +246,15 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
      * @param player 目标玩家
      */
     public void dropAllItems(Player player) {
+        var tag = "劫夺图腾";
         PlayerInventory inventory = player.getInventory();
         Player damage = damageMap.get(player);
         if (damage == null)
             return;
-        if (!NekoUtil.hasTagItem(damage.getInventory(), "劫夺图腾"))
+        if (!NekoUtil.hasTagItem(damage.getInventory(), tag))
             return;
+        NekoUtil.spendTagItem(damage.getInventory(), tag);
+        damage.sendMessage("你使用了一个 " + tag);
         inventory.forEach(itemStack -> {
             if (itemStack == null || itemStack.getType().isAir())
                 return;

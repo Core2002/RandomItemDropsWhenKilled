@@ -30,15 +30,8 @@ public class NekoUtil {
         inventory.forEach(itemStack -> {
             if (itemStack == null || itemStack.getType().isAir())
                 return;
-            if (hasTagItem(itemStack, tag)) {
-                var num = readItemNumericProperties(itemStack, tag);
-                if (num >= 0) {
-                    has.set(true);
-                    writeItemNumericProperties(itemStack, tag, num--);
-                    System.out.println("剩余次数设置为" + num);
-                }
-            }
-
+            if (hasTagItem(itemStack, tag))
+                has.set(true);
         });
         return has.get();
     }
@@ -60,6 +53,22 @@ public class NekoUtil {
             return false;
         lore.stream().filter(s -> s.contains(tag)).forEach(s -> is.set(true));
         return is.get();
+    }
+
+    /**
+     * 检查玩家背包内是否携带某种标签的物品
+     *
+     * @return true:携带 false:不携带
+     */
+    public static void spendTagItem(PlayerInventory inventory, String tag) {
+        for (ItemStack itemStack : inventory) {
+            if (itemStack == null || itemStack.getType().isAir())
+                continue;
+            if (NekoUtil.hasTagItem(itemStack, tag)) {
+                itemStack.setAmount(itemStack.getAmount() - 1);
+                return;
+            }
+        }
     }
 
     /**
