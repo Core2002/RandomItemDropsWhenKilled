@@ -98,6 +98,15 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
                 })
                 .register();
 
+        // 伪命令：写物品标签
+        NekoUtil.makePlayerConmmand("ridwk.add-plunder.writeTag", "#ridwk-writeTag", res -> {
+            ItemStack itemInMainHand = res.player().getInventory().getItemInMainHand();
+            if (itemInMainHand.getType().isAir())
+                return;
+            NekoUtil.makeTagItem(itemInMainHand, res.args()[1]);
+            res.player().sendMessage("已标记 " + res.args()[1] + " 标签");
+        });
+
         // TODO 临时命令：给物品标记掠夺属性
         makePlayerConmmand("ridwk.add-plunder", "ridwkAddPlunder", res -> {
             ItemStack itemInMainHand = res.player().getInventory().getItemInMainHand();
