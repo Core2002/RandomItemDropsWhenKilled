@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 
 public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     private static final Random random = new Random();
-    private static final Map<Player, Player> damageMap = new HashMap<>();
+    public static final Map<Player, Player> damageMap = new HashMap<>();
 
     public static RandomItemDropsWhenKilled randomItemDropsWhenKilled;
 
@@ -135,7 +135,7 @@ public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     /**
      * 检查玩家背包是否携带掠夺物品,若检查到，则消费该物品一个耐久
      *
-     * @return true:携带 false:不携带
+     * @return true:携带 false:不携带劫夺图腾
      */
     public boolean hasPlunderItemAndSpend(Player player) {
         AtomicBoolean has = new AtomicBoolean(false);
