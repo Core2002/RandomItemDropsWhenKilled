@@ -28,6 +28,8 @@ import java.util.function.Consumer;
 
 public class RandomItemDropsWhenKilled extends JavaPlugin implements Listener {
     private static final Random random = new Random();
+    
+    // 受害者 -> 施暴者
     public static final Map<Player, Player> damageMap = new HashMap<>();
 
     public static RandomItemDropsWhenKilled randomItemDropsWhenKilled;
